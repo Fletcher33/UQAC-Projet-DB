@@ -43,7 +43,7 @@ DELIMITER $
 CREATE PROCEDURE MettreAJourInformationsEtudiant(
     IN id_etudiant_param VARCHAR(10),
     IN nouveau_nom_etudiant VARCHAR(45),
-    IN nouveau_prenom_etudiant VARCHAR(60),
+    IN nouveau_prenom_etudiant VARCHAR(60)
     -- Ajoutez d'autres paramètres pour les informations à mettre à jour
 )
 BEGIN
@@ -83,6 +83,6 @@ END IF;
 UPDATE etudiant
 SET supprime = 1
 WHERE id_etudiant = id_etudiant_param;
-END //
+END$
 
 DELIMITER ;
