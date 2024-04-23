@@ -21,7 +21,9 @@ CREATE PROCEDURE ReserverPlaceStationnement(
     IN date_arrivee DATETIME,
     IN date_depart DATETIME
 )
+
 BEGIN
+    DECLARE id_place_dispo INT;
     -- Vérification des données fournies en paramètres
     IF id_etudiant_param = '' OR date_arrivee IS NULL OR date_depart IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tous les champs sont obligatoires.';
@@ -30,8 +32,8 @@ BEGIN
     -- Vérifier si l'étudiant est inscrit à un cours pendant la période de stationnement
     IF NOT EXISTS (
         SELECT *
-        FROM cours_suivi cs
-        INNER JOIN cours c ON cs.id_cours = c.id_cours
+        FROM etudiant et
+        INNER JOIN cours_suivi cs ON et.id_etudiant = cs.id_etudiant
         WHERE cs.id_etudiant = id_etudiant_param
         AND (date_arrivee BETWEEN cs.heure_debut AND cs.heure_fin OR date_depart BETWEEN cs.heure_debut AND cs.heure_fin)
     ) THEN
@@ -45,9 +47,9 @@ BEGIN
     END IF;
 
     -- Trouver une place disponible dans l'université de l'étudiant
-    DECLARE id_place INT;
 
-    SELECT p.id_place INTO id_place
+
+    SELECT p.id_place INTO id_place_dispo
     FROM place p
              INNER JOIN allee a ON p.id_allee = a.id_allee
              INNER JOIN espace_stationnement es ON a.id_espace_stationnement = es.id_espace_stationnement
@@ -55,11 +57,11 @@ BEGIN
       AND p.disponibilite = 'Oui'
     LIMIT 1;
 
-    IF id_place IS NULL THEN
+    IF id_place_dispo IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Aucune place disponible.';
     ELSE
         -- Mettre à jour la disponibilité de la place
-        UPDATE place SET disponibilite = 'Non' WHERE id_place = id_place;
+        UPDATE place SET disponibilite = 'Non' WHERE id_place = id_place_dispo;
 
         -- Afficher les détails de la réservation
         SELECT es.designation_espace_stationnement, a.designation_allee, a.sens_circulation, p.id_place, p.type_de_place, a.tarif_horaire,
@@ -67,9 +69,9 @@ BEGIN
         FROM espace_stationnement es
                  INNER JOIN allee a ON es.id_espace_stationnement = a.id_espace_stationnement
                  INNER JOIN place p ON a.id_allee = p.id_allee
-        WHERE p.id_place = id_place;
+        WHERE p.id_place = id_place_dispo;
     END IF;
-END //
+END $
 
 DELIMITER ;
 
@@ -81,8 +83,8 @@ CREATE TRIGGER ActualiserPlacesDisponibles
 BEGIN
     UPDATE allee a
         INNER JOIN place p ON a.id_allee = p.id_allee
-        SET p.nombre_places_dispo = p.nombre_places_dispo - 1
+        SET a.nombre_places_dispo = a.nombre_places_dispo - 1
     WHERE p.id_place = NEW.id_place;
-END //
+END $
 
 DELIMITER ;
