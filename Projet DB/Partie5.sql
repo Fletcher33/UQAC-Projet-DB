@@ -1,3 +1,4 @@
+USE projet_final_8TRD151;
 DROP PROCEDURE IF EXISTS RapportStatistiqueAiresStationnement;
 DELIMITER $
 
@@ -140,6 +141,6 @@ END LOOP universite_loop;
 
     -- Fermeture du curseur
 CLOSE cur_universites;
-END //
+END $
 
 DELIMITER ;
