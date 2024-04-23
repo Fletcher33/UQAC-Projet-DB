@@ -8,10 +8,10 @@ CALL CreerEtudiant('Kyllian','HOT','HOTK06120000','DE26D','dhdfjg@gfgf.dsgf','07
 
 
 -- 2.2 AFFICHER LES INFORMATIONS PERSONNELLES D’UN ÉTUDIANT
-CALL AfficherInformationsEtudiant('ETU-123456');
+CALL AfficherInformationsEtudiant('ETU-000001');
 
 -- 2.3 METTRE À JOUR LES INFORMATIONS PERSONNELLES D’UN ÉTUDIANT
-CALL MettreAJourInformationsEtudiant('ETU-123456', 'Doe', 'Jane', 'CONE31128105', 'ABC123', 'jane.doe@example.com', '+123.4567890123', 1);
+CALL MettreAJourInformationsEtudiant('ETU-000001', 'STEVE','STEVE' , NULL, 'EFGJGKD', NULL, '0445758524', NULL);
 
 -- 2.4 SUPPRIMER UN ÉTUDIANT
 CALL SupprimerEtudiant('ETU-123456');
