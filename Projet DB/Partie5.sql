@@ -5,7 +5,7 @@ DELIMITER $
 CREATE PROCEDURE RapportStatistiqueAiresStationnement()
 BEGIN
     -- Déclaration des variables pour stocker les statistiques
-    DECLARE nom_universite VARCHAR(45);
+    DECLARE name_universite VARCHAR(45);
     DECLARE nb_etudiants INT;
     DECLARE nb_espaces_stationnement INT;
     DECLARE nb_agents_surveillance INT;
@@ -42,51 +42,53 @@ SET nb_espaces_stationnement = 0;
 
     -- Boucle pour parcourir les universités
     universite_loop: LOOP
-        FETCH cur_universites INTO nom_universite, nb_etudiants;
+        FETCH cur_universites INTO name_universite, nb_etudiants;
 
         -- Quitter la boucle s'il n'y a plus de lignes
-        IF (nom_universite IS NULL) THEN
+        IF (name_universite IS NULL) THEN
             LEAVE universite_loop;
 END IF;
 
         -- Calculer le nombre d'espaces de stationnement pour cette université
 SELECT COUNT(*) INTO nb_espaces_stationnement
 FROM espace_stationnement
-WHERE id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite);
+WHERE id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite);
 
 -- Calculer le nombre d'agents de surveillance pour cette université
 SELECT COUNT(*) INTO nb_agents_surveillance
 FROM espace_surveille es
          INNER JOIN agent a ON es.id_agent = a.id_agent
          INNER JOIN espace_stationnement es2 ON es.id_espace_stationnement = es2.id_espace_stationnement
-WHERE es2.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite);
+WHERE es2.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite);
 
 -- Calculer le nombre d'allées pour cette université
 SELECT COUNT(*) INTO nb_allees
 FROM allee a
          INNER JOIN espace_stationnement es ON a.id_espace_stationnement = es.id_espace_stationnement
-WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite);
+WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite);
 
 -- Calculer le nombre total de places pour cette université
 SELECT COUNT(*) INTO nb_places
 FROM place p
          INNER JOIN allee a ON p.id_allee = a.id_allee
          INNER JOIN espace_stationnement es ON a.id_espace_stationnement = es.id_espace_stationnement
-WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite);
+WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite);
 
 -- Calculer le nombre de places pour handicapés pour cette université
 SELECT COUNT(*) INTO nb_places_handicapes
 FROM place p
          INNER JOIN allee a ON p.id_allee = a.id_allee
          INNER JOIN espace_stationnement es ON a.id_espace_stationnement = es.id_espace_stationnement
-WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite)
+WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite)
   AND p.type_de_place = 'personnes à mobilité réduite';
 
 -- Calculer le nombre de places disponibles pour cette université
 SELECT COUNT(*) INTO nb_places_disponibles
 FROM place
 WHERE disponibilite = 'Oui'
-  AND id_allee IN (SELECT id_allee FROM allee WHERE id_espace_stationnement IN (SELECT id_espace_stationnement FROM espace_stationnement WHERE id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite)));
+  AND id_allee IN (SELECT id_allee FROM allee WHERE id_espace_stationnement IN
+(SELECT id_espace_stationnement FROM espace_stationnement WHERE id_universite =
+(SELECT id_universite FROM universite WHERE nom_universite = name_universite)));
 
 -- Calculer le nombre de places réservées pour cette université
 SELECT COUNT(*) INTO nb_places_reservees
@@ -94,7 +96,7 @@ FROM place_reservee pr
          INNER JOIN place p ON pr.id_place = p.id_place
          INNER JOIN allee a ON p.id_allee = a.id_allee
          INNER JOIN espace_stationnement es ON a.id_espace_stationnement = es.id_espace_stationnement
-WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite);
+WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite);
 
 -- Calculer la moyenne de réservation en 2023 pour cette université (exemple de calcul)
 SELECT AVG(nb_reservations) INTO moyenne_reservations_2023
@@ -113,7 +115,7 @@ FROM (
                   INNER JOIN place p ON pr.id_place = p.id_place
                   INNER JOIN allee a ON p.id_allee = a.id_allee
                   INNER JOIN espace_stationnement es ON a.id_espace_stationnement = es.id_espace_stationnement
-         WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite)
+         WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite)
          GROUP BY pr.date_heure_debut
          ORDER BY nb_reservations DESC
              LIMIT 1
@@ -127,14 +129,14 @@ FROM (
                   INNER JOIN place p ON pr.id_place = p.id_place
                   INNER JOIN allee a ON p.id_allee = a.id_allee
                   INNER JOIN espace_stationnement es ON a.id_espace_stationnement = es.id_espace_stationnement
-         WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = nom_universite)
+         WHERE es.id_universite = (SELECT id_universite FROM universite WHERE nom_universite = name_universite)
          GROUP BY pr.date_heure_debut
          ORDER BY nb_reservations ASC
              LIMIT 1
      ) AS subquery;
 
 -- Affichage des statistiques pour cette université
-SELECT nom_universite, nb_etudiants, nb_espaces_stationnement, nb_agents_surveillance, nb_allees, nb_places, nb_places_handicapes,
+SELECT name_universite, nb_etudiants, nb_espaces_stationnement, nb_agents_surveillance, nb_allees, nb_places, nb_places_handicapes,
        nb_places_disponibles, nb_places_reservees, moyenne_reservations_2023, date_plus_reservation, date_moins_reservation;
 
 END LOOP universite_loop;
