@@ -1,7 +1,9 @@
 USE projet_final_8TRD151;
 
 DROP PROCEDURE IF EXISTS ConfigurerNouvelleAireStationnement;
+DROP TABLE IF EXISTS log_aire_stationnement;
 DROP TRIGGER IF EXISTS LogCreationAireStationnement;
+
 
 DELIMITER $
 
@@ -61,6 +63,16 @@ END $
 DELIMITER ;
 
 
+
+
+
+CREATE TABLE IF NOT EXISTS log_aire_stationnement (
+    id_log INT AUTO_INCREMENT PRIMARY KEY,
+    nom_universite VARCHAR(45),
+    sigle_universite VARCHAR(10),
+    date_heure_tentative DATETIME
+);
+
 -- Configuration du déclencheur pour archiver les tentatives de création d'espace de stationnement :
 
 DELIMITER $
@@ -69,9 +81,17 @@ CREATE TRIGGER LogCreationAireStationnement
 AFTER INSERT ON espace_stationnement
 FOR EACH ROW
 BEGIN
+    DECLARE univ_nom VARCHAR(45);
+    DECLARE univ_sigle VARCHAR(10);
+
+    -- Récupération des données de l'université associée à l'espace de stationnement
+    SELECT nom_universite, sigle INTO univ_nom, univ_sigle
+    FROM universite
+    WHERE id_universite = NEW.id_universite;
+
     -- Insertion des données dans la table de log
     INSERT INTO log_aire_stationnement (nom_universite, sigle_universite, date_heure_tentative)
-    VALUES (NEW.nom_universite, NEW.sigle, NOW());
+    VALUES (univ_nom, univ_sigle, NOW());
 END $
 
 DELIMITER ;
