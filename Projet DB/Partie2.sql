@@ -1,3 +1,4 @@
+-- Partie2.sql
 
 USE projet_final_8TRD151;
 
@@ -5,6 +6,7 @@ DROP PROCEDURE IF EXISTS CreerEtudiant;
 DROP PROCEDURE IF EXISTS AfficherInformationsEtudiant;
 DROP PROCEDURE IF EXISTS MettreAJourInformationsEtudiant;
 DROP PROCEDURE IF EXISTS SupprimerEtudiant;
+DROP TABLE IF EXISTS historique_etudiant;
 
 
 
@@ -87,47 +89,113 @@ DELIMITER ;
 
 -- 2.3 METTRE À JOUR LES INFORMATIONS PERSONNELLES D’UN ÉTUDIANT
 CREATE TABLE historique_etudiant (
-    id_historique INT AUTO_INCREMENT PRIMARY KEY,
-    id_etudiant VARCHAR(10),
-    ancien_nom_etudiant VARCHAR(45),
-    ancien_prenom_etudiant VARCHAR(60),
-    nouveau_nom_etudiant VARCHAR(45),
-    nouveau_prenom_etudiant VARCHAR(60),
-    date_modification DATETIME
+    id_historique_etudiant INT AUTO_INCREMENT PRIMARY KEY,
+    ancien_id_etudiant VARCHAR(10) NOT NULL,
+    ancien_nom_etudiant VARCHAR(45) NOT NULL,
+    ancien_prenom_etudiant VARCHAR(60) NOT NULL,
+    ancien_code_permanent VARCHAR(15) NOT NULL,
+    ancien_numero_plaque VARCHAR(10) NOT NULL,
+    ancien_courriel_etudiant VARCHAR(55) NOT NULL,
+    ancien_telephone_etudiant VARCHAR(10) NOT NULL,
+    ancien_supprime TINYINT(1) UNSIGNED NOT NULL,
+    ancien_id_universite INT(11) NOT NULL,
+    date_modification DATETIME,
+    KEY universite_fkhisto (ancien_id_universite),
+    CONSTRAINT universite_fkhisto FOREIGN KEY (ancien_id_universite) REFERENCES universite (id_universite) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
+DELIMITER $
 DELIMITER $
 
 CREATE PROCEDURE MettreAJourInformationsEtudiant(
     IN id_etudiant_param VARCHAR(10),
     IN nouveau_nom_etudiant VARCHAR(45),
-    IN nouveau_prenom_etudiant VARCHAR(60)
-    -- Ajoutez d'autres paramètres pour les informations à mettre à jour
+    IN nouveau_prenom_etudiant VARCHAR(60),
+    IN nouveau_code_permanent VARCHAR(15),
+    IN nouveau_numero_plaque VARCHAR(10),
+    IN nouveau_courriel_etudiant VARCHAR(55),
+    IN nouveau_telephone_etudiant VARCHAR(10),
+    IN nouveau_universite INT
 )
 BEGIN
+    -- Déclaration des variables pour les anciennes valeurs
+    DECLARE ancien_nom_etudiant VARCHAR(45);
+    DECLARE ancien_prenom_etudiant VARCHAR(60);
+    DECLARE ancien_code_permanent VARCHAR(15);
+    DECLARE ancien_numero_plaque VARCHAR(10);
+    DECLARE ancien_courriel_etudiant VARCHAR(55);
+    DECLARE ancien_telephone_etudiant VARCHAR(10);
+    DECLARE ancien_supprime TINYINT(1) UNSIGNED;
+    DECLARE ancien_universite INT;
+
     -- Vérifier si l'étudiant existe
     IF NOT EXISTS (SELECT * FROM etudiant WHERE id_etudiant = id_etudiant_param) THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'L''étudiant spécifié n''existe pas.';
     END IF;
 
-    -- Enregistrer l'ancienne valeur avant la mise à jour
-    DECLARE ancien_nom VARCHAR(45);
-    DECLARE ancien_prenom VARCHAR(60);
-
-    SELECT nom_etudiant, prenom_etudiant INTO ancien_nom, ancien_prenom
-    FROM etudiant
-    WHERE id_etudiant = id_etudiant_param;
+    -- Récupérer les anciennes valeurs
+    SELECT
+        nom_etudiant,
+        prenom_etudiant,
+        code_permanent,
+        numero_plaque,
+        courriel_etudiant,
+        telephone_etudiant,
+        supprime,
+        id_universite
+    INTO
+        ancien_nom_etudiant,
+        ancien_prenom_etudiant,
+        ancien_code_permanent,
+        ancien_numero_plaque,
+        ancien_courriel_etudiant,
+        ancien_telephone_etudiant,
+        ancien_supprime,
+        ancien_universite
+    FROM
+        etudiant
+    WHERE
+        id_etudiant = id_etudiant_param;
 
     -- Mettre à jour les informations de l'étudiant
     UPDATE etudiant
-    SET nom_etudiant = nouveau_nom_etudiant,
-        prenom_etudiant = nouveau_prenom_etudiant
-    WHERE id_etudiant = id_etudiant_param;
+    SET
+        nom_etudiant = IFNULL(nouveau_nom_etudiant, nom_etudiant),
+        prenom_etudiant = IFNULL(nouveau_prenom_etudiant, prenom_etudiant),
+        code_permanent = IFNULL(nouveau_code_permanent, code_permanent),
+        numero_plaque = IFNULL(nouveau_numero_plaque, numero_plaque),
+        courriel_etudiant = IFNULL(nouveau_courriel_etudiant, courriel_etudiant),
+        telephone_etudiant = IFNULL(nouveau_telephone_etudiant, telephone_etudiant),
+        id_universite = IFNULL(nouveau_universite, id_universite)
+    WHERE
+        id_etudiant = id_etudiant_param;
 
     -- Enregistrer dans l'historique
-    INSERT INTO historique_etudiant (id_etudiant, ancien_nom_etudiant, ancien_prenom_etudiant, nouvelle_nom_etudiant, nouvelle_prenom_etudiant, date_modification)
-    VALUES (id_etudiant_param, ancien_nom, ancien_prenom, nouveau_nom_etudiant, nouveau_prenom_etudiant, NOW());
+    INSERT INTO historique_etudiant (
+        ancien_id_etudiant,
+        ancien_nom_etudiant,
+        ancien_prenom_etudiant,
+        ancien_code_permanent,
+        ancien_numero_plaque,
+        ancien_courriel_etudiant,
+        ancien_telephone_etudiant,
+        ancien_supprime,
+        ancien_id_universite,
+        date_modification
+    )
+    VALUES (
+        id_etudiant_param,
+        ancien_nom_etudiant,
+        ancien_prenom_etudiant,
+        ancien_code_permanent,
+        ancien_numero_plaque,
+        ancien_courriel_etudiant,
+        ancien_telephone_etudiant,
+        ancien_supprime,
+        ancien_universite,
+        NOW()
+    );
 END $
 
 DELIMITER ;
