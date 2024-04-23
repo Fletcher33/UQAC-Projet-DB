@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS historique_etudiant;
 
 
 -- 2.1 CRÉER UN NOUVEL ÉTUDIANT
-DELIMITER //
+DELIMITER $$
 
 CREATE PROCEDURE CreerEtudiant(
     IN nom_etudiant VARCHAR(45),
@@ -51,7 +51,7 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Courriel invalide.';
 
     -- Validation du numéro de téléphone
-    ELSEIF NOT telephone_etudiant REGEXP '^\+[0-9]+$' THEN
+    ELSEIF NOT telephone_etudiant REGEXP '^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numéro de téléphone invalide.';
 
     ELSE
@@ -63,12 +63,12 @@ BEGIN
         INSERT INTO etudiant (id_etudiant, nom_etudiant, prenom_etudiant, code_permanent, numero_plaque, courriel_etudiant, telephone_etudiant, id_universite)
         VALUES (nouvel_id_etudiant, nom_etudiant, prenom_etudiant, code_permanent, numero_plaque, courriel_etudiant, telephone_etudiant, id_universite);
     END IF;
-END //
+END $$
 
 DELIMITER ;
 
 -- 2.2 AFFICHER LES INFORMATIONS PERSONNELLES D’UN ÉTUDIANT
-DELIMITER $
+DELIMITER $$
 
 CREATE PROCEDURE AfficherInformationsEtudiant(
     IN id_etudiant_param VARCHAR(10)
@@ -83,7 +83,7 @@ BEGIN
     SELECT *
     FROM etudiant
     WHERE id_etudiant = id_etudiant_param;
-END $
+END $$
 
 DELIMITER ;
 
@@ -105,8 +105,7 @@ CREATE TABLE historique_etudiant (
     CONSTRAINT universite_fkhisto FOREIGN KEY (ancien_id_universite) REFERENCES universite (id_universite) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
-DELIMITER $
-DELIMITER $
+DELIMITER $$
 
 CREATE PROCEDURE MettreAJourInformationsEtudiant(
     IN id_etudiant_param VARCHAR(10),
@@ -197,11 +196,11 @@ BEGIN
         ancien_universite,
         NOW()
     );
-END $
+END $$
 
 DELIMITER ;
 
-DELIMITER $
+DELIMITER $$
 
 CREATE PROCEDURE SupprimerEtudiant(
     IN id_etudiant_param VARCHAR(10)
@@ -211,12 +210,12 @@ BEGIN
     IF NOT EXISTS (SELECT * FROM etudiant WHERE id_etudiant = id_etudiant_param) THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'L''étudiant spécifié n''existe pas.';
-END IF;
+    END IF;
 
     -- Marquer l'étudiant comme supprimé
-UPDATE etudiant
-SET supprime = 1
-WHERE id_etudiant = id_etudiant_param;
-END$
+    UPDATE etudiant
+    SET supprime = 1
+    WHERE id_etudiant = id_etudiant_param;
+    END $$
 
 DELIMITER ;
