@@ -25,34 +25,37 @@ CREATE PROCEDURE CreerEtudiant(
 BEGIN
     DECLARE nouvel_id_etudiant VARCHAR(10); -- Déclarer la variable en haut
 
-
     -- Vérification de la validité des données
     IF nom_etudiant = '' OR prenom_etudiant = '' OR code_permanent = '' OR numero_plaque = '' OR courriel_etudiant = '' OR telephone_etudiant = '' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tous les champs sont obligatoires.';
 
-    -- Validation du nom
+    -- Validation de nom_etudiant
     ELSEIF NOT nom_etudiant REGEXP '^[a-zA-ZÀ-ÿ\\-\\\'\\s]+$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Nom invalide.';
 
-    -- Validation du prénom
+    -- Validation de prenom_etudiant
     ELSEIF NOT prenom_etudiant REGEXP '^[A-Z][A-Za-z\é\è\ê\-]+$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Prénom invalide.';
 
-    -- Validation du Code permanant
-    ELSEIF NOT code_permanent REGEXP '^[A-Z]+[0-9]{8}$' THEN
+    -- Validation de code_permanent
+    ELSEIF NOT code_permanent REGEXP '^[A-Z]{4}[0-9]{8}$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Code permanant invalide.';
 
-    -- Validation du numero de plaque
+    -- Validation de numero_plaque
     ELSEIF NOT numero_plaque REGEXP '^[A-Z0-9\-]+$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numéro de plaque invalide.';
 
-    -- Validation du courriel
+    -- Validation de courriel_etudiant
     ELSEIF NOT courriel_etudiant REGEXP '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Courriel invalide.';
 
-    -- Validation du numéro de téléphone
+    -- Validation de telephone_etudiant
     ELSEIF NOT telephone_etudiant REGEXP '^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numéro de téléphone invalide.';
+
+    -- Validation de id_universite
+    ELSEIF NOT EXISTS (SELECT * FROM universite as uni WHERE uni.id_universite = id_universite) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ID de l''université invalide.';
 
     ELSE
         -- Générer un nouvel identifiant étudiant (à adapter selon votre méthode)
@@ -115,7 +118,7 @@ CREATE PROCEDURE MettreAJourInformationsEtudiant(
     IN nouveau_numero_plaque VARCHAR(10),
     IN nouveau_courriel_etudiant VARCHAR(55),
     IN nouveau_telephone_etudiant VARCHAR(10),
-    IN nouveau_universite INT
+    IN nouveau_id_universite INT
 )
 BEGIN
     -- Déclaration des variables pour les anciennes valeurs
@@ -132,70 +135,100 @@ BEGIN
     IF NOT EXISTS (SELECT * FROM etudiant WHERE id_etudiant = id_etudiant_param) THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'L''étudiant spécifié n''existe pas.';
+
+
+    -- Validation du nom
+    ELSEIF nouveau_nom_etudiant IS NOT NULL AND NOT nouveau_nom_etudiant REGEXP '^[a-zA-ZÀ-ÿ\\-\\\'\\s]+$' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Nom invalide.';
+
+    -- Validation du prénom
+    ELSEIF nouveau_prenom_etudiant IS NOT NULL AND NOT  nouveau_prenom_etudiant REGEXP '^[A-Z][A-Za-z\é\è\ê\-]+$' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Prénom invalide.';
+
+    -- Validation du Code permanant
+    ELSEIF nouveau_code_permanent IS NOT NULL AND NOT nouveau_code_permanent REGEXP '^[A-Z]{4}[0-9]{8}$' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Code permanant invalide.';
+
+    -- Validation du numero de plaque
+    ELSEIF nouveau_numero_plaque IS NOT NULL AND NOT nouveau_numero_plaque REGEXP '^[A-Z0-9\-]+$' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numéro de plaque invalide.';
+
+    -- Validation du courriel
+    ELSEIF nouveau_courriel_etudiant IS NOT NULL AND NOT nouveau_courriel_etudiant REGEXP '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Courriel invalide.';
+
+    -- Validation du numéro de téléphone
+    ELSEIF nouveau_telephone_etudiant IS NOT NULL AND NOT nouveau_telephone_etudiant REGEXP '^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numéro de téléphone invalide.';
+
+    -- Validation de l'id de l'université
+    ELSEIF NOT EXISTS (SELECT * FROM universite as uni WHERE uni.id_universite = nouveau_id_universite) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'ID de l''université invalide.';
+
+    ELSE
+        -- Récupérer les anciennes valeurs
+        SELECT
+            nom_etudiant,
+            prenom_etudiant,
+            code_permanent,
+            numero_plaque,
+            courriel_etudiant,
+            telephone_etudiant,
+            supprime,
+            id_universite
+        INTO
+            ancien_nom_etudiant,
+            ancien_prenom_etudiant,
+            ancien_code_permanent,
+            ancien_numero_plaque,
+            ancien_courriel_etudiant,
+            ancien_telephone_etudiant,
+            ancien_supprime,
+            ancien_universite
+        FROM
+            etudiant
+        WHERE
+            id_etudiant = id_etudiant_param;
+
+        -- Mettre à jour les informations de l'étudiant
+        UPDATE etudiant
+        SET
+            nom_etudiant = IFNULL(nouveau_nom_etudiant, nom_etudiant),
+            prenom_etudiant = IFNULL(nouveau_prenom_etudiant, prenom_etudiant),
+            code_permanent = IFNULL(nouveau_code_permanent, code_permanent),
+            numero_plaque = IFNULL(nouveau_numero_plaque, numero_plaque),
+            courriel_etudiant = IFNULL(nouveau_courriel_etudiant, courriel_etudiant),
+            telephone_etudiant = IFNULL(nouveau_telephone_etudiant, telephone_etudiant),
+            id_universite = IFNULL(nouveau_id_universite, id_universite)
+        WHERE
+            id_etudiant = id_etudiant_param;
+
+        -- Enregistrer dans l'historique
+        INSERT INTO historique_etudiant (
+            ancien_id_etudiant,
+            ancien_nom_etudiant,
+            ancien_prenom_etudiant,
+            ancien_code_permanent,
+            ancien_numero_plaque,
+            ancien_courriel_etudiant,
+            ancien_telephone_etudiant,
+            ancien_supprime,
+            ancien_id_universite,
+            date_modification
+        )
+        VALUES (
+            id_etudiant_param,
+            ancien_nom_etudiant,
+            ancien_prenom_etudiant,
+            ancien_code_permanent,
+            ancien_numero_plaque,
+            ancien_courriel_etudiant,
+            ancien_telephone_etudiant,
+            ancien_supprime,
+            ancien_universite,
+            NOW()
+        );
     END IF;
-
-    -- Récupérer les anciennes valeurs
-    SELECT
-        nom_etudiant,
-        prenom_etudiant,
-        code_permanent,
-        numero_plaque,
-        courriel_etudiant,
-        telephone_etudiant,
-        supprime,
-        id_universite
-    INTO
-        ancien_nom_etudiant,
-        ancien_prenom_etudiant,
-        ancien_code_permanent,
-        ancien_numero_plaque,
-        ancien_courriel_etudiant,
-        ancien_telephone_etudiant,
-        ancien_supprime,
-        ancien_universite
-    FROM
-        etudiant
-    WHERE
-        id_etudiant = id_etudiant_param;
-
-    -- Mettre à jour les informations de l'étudiant
-    UPDATE etudiant
-    SET
-        nom_etudiant = IFNULL(nouveau_nom_etudiant, nom_etudiant),
-        prenom_etudiant = IFNULL(nouveau_prenom_etudiant, prenom_etudiant),
-        code_permanent = IFNULL(nouveau_code_permanent, code_permanent),
-        numero_plaque = IFNULL(nouveau_numero_plaque, numero_plaque),
-        courriel_etudiant = IFNULL(nouveau_courriel_etudiant, courriel_etudiant),
-        telephone_etudiant = IFNULL(nouveau_telephone_etudiant, telephone_etudiant),
-        id_universite = IFNULL(nouveau_universite, id_universite)
-    WHERE
-        id_etudiant = id_etudiant_param;
-
-    -- Enregistrer dans l'historique
-    INSERT INTO historique_etudiant (
-        ancien_id_etudiant,
-        ancien_nom_etudiant,
-        ancien_prenom_etudiant,
-        ancien_code_permanent,
-        ancien_numero_plaque,
-        ancien_courriel_etudiant,
-        ancien_telephone_etudiant,
-        ancien_supprime,
-        ancien_id_universite,
-        date_modification
-    )
-    VALUES (
-        id_etudiant_param,
-        ancien_nom_etudiant,
-        ancien_prenom_etudiant,
-        ancien_code_permanent,
-        ancien_numero_plaque,
-        ancien_courriel_etudiant,
-        ancien_telephone_etudiant,
-        ancien_supprime,
-        ancien_universite,
-        NOW()
-    );
 END $$
 
 DELIMITER ;
