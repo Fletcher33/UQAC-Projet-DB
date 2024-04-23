@@ -25,6 +25,7 @@ CREATE PROCEDURE CreerEtudiant(
 BEGIN
     DECLARE nouvel_id_etudiant VARCHAR(10); -- Déclarer la variable en haut
 
+
     -- Vérification de la validité des données
     IF nom_etudiant = '' OR prenom_etudiant = '' OR code_permanent = '' OR numero_plaque = '' OR courriel_etudiant = '' OR telephone_etudiant = '' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tous les champs sont obligatoires.';
@@ -42,7 +43,7 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Code permanant invalide.';
 
     -- Validation du numero de plaque
-    ELSEIF NOT numero_plaque REGEXP '^[A-Za-z0-9\-]+$' THEN
+    ELSEIF NOT numero_plaque REGEXP '^[A-Z0-9\-]+$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numéro de plaque invalide.';
 
     -- Validation du courriel
@@ -50,13 +51,13 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Courriel invalide.';
 
     -- Validation du numéro de téléphone
-    ELSEIF NOT telephone_etudiant REGEXP '^\+[0-9]{1,3}\.[0-9]{1,14}$' THEN
+    ELSEIF NOT telephone_etudiant REGEXP '^\+[0-9]+$' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Numéro de téléphone invalide.';
 
     ELSE
         -- Générer un nouvel identifiant étudiant (à adapter selon votre méthode)
         -- TODO : Voir question 4
-        SET nouvel_id_etudiant = UUID();
+        SET nouvel_id_etudiant = GenererIDEtudiant();
 
         -- Insérer l'étudiant dans la base de données
         INSERT INTO etudiant (id_etudiant, nom_etudiant, prenom_etudiant, code_permanent, numero_plaque, courriel_etudiant, telephone_etudiant, id_universite)

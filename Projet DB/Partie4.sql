@@ -1,3 +1,5 @@
+USE projet_final_8TRD151;
+
 -- Suppression des fonctions, vues et événements existants pour éviter les erreurs de duplicata
 DROP FUNCTION IF EXISTS GenererIDEtudiant;
 DROP VIEW IF EXISTS InformationsAiresStationnement;
