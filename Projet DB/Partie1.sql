@@ -20,6 +20,7 @@ CREATE PROCEDURE ConfigurerNouvelleAireStationnement(
 BEGIN
     DECLARE universite_count INT;
     DECLARE i INT DEFAULT 1;
+    DECLARE j INT DEFAULT 1;
 
     -- Validation des données d'entrée
     IF nom_universite IS NULL OR sigle_universite IS NULL OR numero_civique IS NULL OR nom_rue IS NULL OR ville IS NULL OR province IS NULL OR code_postal IS NULL OR designation_espace_stationnement IS NULL THEN
@@ -56,6 +57,17 @@ BEGIN
                 CASE i WHEN 1 THEN 'Entrée' WHEN 2 THEN 'Sortie' ELSE 'Bidirectionnel' END,
                 10,
                 4.5);
+
+        -- Récupération de l'ID de l'allée nouvellement créée
+        SET @id_allee := LAST_INSERT_ID();
+
+        -- Ajout de 10 places dans chaque allée
+        WHILE j <= 10 DO
+            INSERT INTO place (id_allee, numero_place, est_reservee)
+            VALUES (@id_allee, j, FALSE);
+            SET j := j + 1;
+        END WHILE;
+
         SET i := i + 1;
     END WHILE;
 END $
