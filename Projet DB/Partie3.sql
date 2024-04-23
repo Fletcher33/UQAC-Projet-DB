@@ -43,7 +43,7 @@ BEGIN
         FROM etudiant
         WHERE id_etudiant = id_etudiant_param;
 
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'L''étudiant n''est pas inscrit à un cours pendant cette période de stationnement.';
+
     END IF;
 
     -- Trouver une place disponible dans l'université de l'étudiant
@@ -71,6 +71,11 @@ BEGIN
                  INNER JOIN place p ON a.id_allee = p.id_allee
         WHERE p.id_place = id_place_dispo;
     END IF;
+
+    INSERT INTO place_reservee (id_place, id_etudiant, date_heure_debut, date_heure_fin)
+    VALUES
+    (id_place_dispo, id_etudiant_param, date_arrivee, date_depart);
+
 END $
 
 DELIMITER ;

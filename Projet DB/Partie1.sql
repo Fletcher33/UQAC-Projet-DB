@@ -1,3 +1,4 @@
+USE projet_final_8TRD151;
 DROP TABLE IF EXISTS log_aire_stationnement;
 CREATE TABLE log_aire_stationnement (
                                         id_log INT AUTO_INCREMENT PRIMARY KEY,
